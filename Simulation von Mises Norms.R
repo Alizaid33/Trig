@@ -4,6 +4,7 @@ library("circular")
 library("openxlsx")
 library(ggplot2)
 library(tidyr)
+library(dplyr)
 
 GroupedR<-function(n,k,Mu, kappa){
   
@@ -161,17 +162,29 @@ long_data <- filtered_data %>%
          GBiasNorm1, GBiasNorm2, GBiasNorm3, GBiasNorm4,
          CGBiasNorm1, CGBiasNorm2, CGBiasNorm3, CGBiasNorm4)
 
-# Plot the data using ggplot2
-aa<-ggplot(long_data, aes(x = kappa, y = Value, color = Metric)) +
-  geom_point(size = 3) +               # Scatter plot with points
+# Create a new column to group the metrics
+long_data$MetricGroup <- case_when(
+  long_data$Metric %in% c("GBiasNorm1", "CGBiasNorm1") ~ "Norm 1",
+  long_data$Metric %in% c("GBiasNorm2", "CGBiasNorm2") ~ "Norm 2",
+  long_data$Metric %in% c("GBiasNorm3", "CGBiasNorm3") ~ "Norm 3",
+  long_data$Metric %in% c("GBiasNorm4", "CGBiasNorm4") ~ "Norm 4",
+  TRUE ~ "Other"
+)
+
+# Create the plot using ggplot2 with faceting by 'MetricGroup'
+BBB <- ggplot(long_data, aes(x = kappa, y = Value, color = Metric)) +
   geom_line(aes(group = Metric), size = 1) +  # Add lines connecting points
-  labs(title = "Scatter plot of GBiasNorm and CGBiasNorm values",
-       x = "Kappa",
+  facet_wrap(~ MetricGroup, scales = "free", ncol = 2) +  # Facet into 2 columns
+ # labs(title = "Scatter plot of GBiasNorm and CGBiasNorm values",
+  labs(x = "Kappa",
        y = "Bias Norm Values") +
   theme_minimal() +
   theme(legend.title = element_blank())
 
-ggsave("myplot.pdf",aa)
+# Display the plot
+print(BBB)
+
+ggsave("Normplot.pdf",BBB)
 
 # Write the results to an Excel file
 write.xlsx(results_df, "SimuVMNORMS.xlsx")
